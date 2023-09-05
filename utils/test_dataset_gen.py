@@ -2,24 +2,23 @@ import cv2
 from PIL import Image
 import tensorflow as tf
 import numpy as np
-
+import matplotlib.pyplot as plt
+plt.figure()
 def get_input_data(file_path = "/Users/iptvpeullaespomgaebaltim/Documents/pythoncode/subscription_finder/datasets/ScaryMovie4.mp4"):
     vidcap = cv2.VideoCapture(file_path)
     vid_spf = 1/vidcap.get(cv2.CAP_PROP_FPS)
     frame_num = 0
 
     success, image = vidcap.read()
-    cropped_img = crop_img(image)
-    output = cropped_img.reshape((1,) + cropped_img.shape)
     time_stamp = 0
-    while success and time_stamp<5:
+    while success and time_stamp<20:
         frame_num += 1
         success, image = vidcap.read()
-        cropped_img = crop_img(image)
-        output = np.append(output, cropped_img.reshape((1,) + cropped_img.shape), axis=0)
         time_stamp = frame_num * vid_spf
+        plt.imshow(image)
+        plt.
 
-    return output
+        yield image
         # cropped_img = crop_img(image)
 def crop_img(input_img_np, padding = 200):
     height, width, ch = input_img_np.shape
