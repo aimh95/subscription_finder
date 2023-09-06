@@ -11,6 +11,18 @@ import tensorflow
 crop_w = 240
 crop_h = 240
 
+def make_grid(input_img, n_sep=16):
+    height, width, _ = input_img.shape
+
+    crop_height = height//n_sep
+    crop_width = height//n_sep
+
+    output_grid = np.empty(shape=(n_sep**2, crop_height, crop_width, 3))
+    for i in range(n_sep):
+        for j in range(n_sep):
+            output_grid[i] = crop_img(input_img, i*n_sep, j*n_sep, (i+1)*n_sep, (j+1)*n_sep)
+
+
 def subscription_info_randgen(height, width):
     fonts_list = glob.glob("/Users/iptvpeullaespomgaebaltim/Documents/pythoncode/subscription_finder/utils/fonts/*.ttf")
     font_selection = random.choice(fonts_list)
@@ -48,18 +60,12 @@ def data_generator(input_img):
 
     return tf.keras.utils.img_to_array(input_img_pil), 1 if font_size>0 else 0
 
-def subscription_crop(input_img, y_min):
-    global crop_w, crop_h
-    width, height = input_img.size
-    move_coord_min = max(0, random.randrange(-height//8, 10))
-    move_coord_max = crop_h + move_coord_min
-    output_img = input_img.crop((0, max(y_min+move_coord_min, 0), width, min(y_min+move_coord_max, height)))
-    output_img = output_img.resize((crop_w, crop_h), Image.BICUBIC)
-    # output_img.show()
-    return output_img
+def crop_img(input_img, x_min, y_min, x_max, y_max):
+    output_img = input_img.crop((x_min, y_min, x_max, y_max))
+    return tf.keras.utils.img_to_array(output_img)
 
 def custom_dataloader(data_path="/Users/iptvpeullaespomgaebaltim/Documents/pythoncode/subscription_finder/datasets/DIV2K_train_HR"):
-    train_ds = tf.keras.utils.image_dataset_from_directory(data_path, labels=None, batch_size=1, image_size=(720, 1080), seed = 123)
+    train_ds = tf.keras.utils.image_dataset_from_directory(data_path, labels=None, batch_size=1, image_size=(480, 720), seed = 123)
     dataset_x, dataset_y = np.empty(shape=(len(train_ds), crop_h, crop_w, 3)), np.empty(shape=len(train_ds), dtype='int64')
     for i, x in enumerate(train_ds):
         subscription_flag = random.randrange(0, 2)
