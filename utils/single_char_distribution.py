@@ -183,7 +183,7 @@ def custom_dataloader(data_path="/Users/pythoncodes/subtitle_finder/datasets/ind
     # plt.figure()
     for i, img in enumerate(train_ds):
         img = random_crop(img[0], crop_size)
-        train_x[i], train_y[i, :, :, 0] = dataset_sentence_generator(img)
+        train_x[i], train_y[i, :, :, 0] = dataset_generator(img)
         # plt.imshow(train_x[i])
         # plt.imshow(train_y[i])
 
