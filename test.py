@@ -18,8 +18,8 @@ fourcc = cv2.VideoWriter_fourcc(*'DIVX')
 out = cv2.VideoWriter('prob_map.mp4', fourcc, 23.976, (1280, 694))
 concat_output = cv2.VideoWriter('concat_output.mp4', fourcc, 23.976, (1280, 694*2))
 
-check_point_path = "weight_path/real_u_net_custom_dataset_colorful_fonts_60epochs/cp-0022.ckpt"
-# check_point_path = "weight_path/real_u_net_custom_dataset_whiteblack_fonts_60epochs/cp-0020.ckpt"
+check_point_path = "weight_path/real_u_net_totaltext_100epochs/cp-0015.ckpt"
+# check_point_path = "weight_path/real_u_net_custom_dataset_whiteblack_fonts_60epochs/cp-0060.ckpt"
 # weight_dir = os.path.join(weight_path, str(epoch))
 
 model.load_weights(check_point_path)
@@ -30,7 +30,7 @@ for i, image in enumerate(test_dataset):
     # model_input, original_height, original_width = numpyIMG_resize(model_input, resize_shape=(320, 320))
 
     y_pred = model.predict(unsqueeze(model_input))
-    y_pred_full = min_max_norm(cc_map_postprocessing(y_pred[0], padding = padding, original_size=image.shape[:2]))*32
+    y_pred_full = min_max_norm(cc_map_postprocessing(y_pred[0], padding = padding, original_size=image.shape[:2]))*64
 
     # cv2.imshow("input_img", cv2.cvtColor(image, cv2.COLOR_RGB2BGR)) #cv2.cvtColor(model_input, cv2.COLOR_RGB2BGR)
     # cv2.imshow("result",y_pred_full)

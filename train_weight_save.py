@@ -16,21 +16,22 @@ from utils.callback import Callback
 
 model = U_Net()
 
-data_version = 0
-initial_epoch = 0
+data_version = 1
+initial_epoch = 14
 
 
-finetuning_weight_path = os.path.join("./weight_path/real_u_net_custom_dataset_60epochs", str(initial_epoch))
-finetuning_weight_path = "None"
+finetuning_weight_path = os.path.join("weight_path/real_u_net_totaltext_100epochs", str(initial_epoch))
+# finetuning_weight_path = "None"
 finetuning_weight_dir = os.path.dirname(finetuning_weight_path)
 
 
 
-weight_save_path = "weight_path/real_u_net_custom_dataset_colorful_fonts_60epochs"
+weight_save_path = "weight_path/real_u_net_totaltext_100epochs"
 weight_save_dir = os.path.dirname(weight_save_path)
 
 if os.path.isdir(finetuning_weight_path):
-    opt = tf.keras.optimizers.Adam(learning_rate=1e-4)
+    print("data loaded from", finetuning_weight_path)
+    opt = tf.keras.optimizers.Adam(learning_rate=1e-5)
     model = tf.keras.models.load_model(finetuning_weight_path)
     loss = tf.keras.losses.binary_crossentropy
     model.compile(optimizer=opt, loss=loss)
@@ -49,12 +50,12 @@ if data_version == 0:
     checkpoint_path = os.path.join(weight_save_path, "cp-{epoch:04d}.ckpt")
     cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path, save_weights_only=True, verbose=1)
 
-    model.fit(data_loader, initial_epoch=initial_epoch, epochs=60, callbacks=[tensorboard_callback, cb, cp_callback])
+    model.fit(data_loader, initial_epoch=initial_epoch, epochs=100, callbacks=[tensorboard_callback, cb, cp_callback])
 
 
 elif data_version == 1:
     data_loader = total_text.TotalTextDataLoader(dataset_path="./datasets/train_dataset/totaltext")
-    train_x, train_y = data_loader.data_gen()
+    # train_x, train_y = data_loader.data_gen()
 
     log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
@@ -62,7 +63,7 @@ elif data_version == 1:
     checkpoint_path = os.path.join(weight_save_path, "cp-{epoch:04d}.ckpt")
     cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path, save_weights_only=True, verbose=1)
 
-    model.fit(x = train_x, y= train_y, initial_epoch=initial_epoch, batch_size = 32, epochs=60, callbacks=[tensorboard_callback, cb, cp_callback])
+    model.fit(data_loader, initial_epoch=initial_epoch, batch_size = 32, epochs=100, callbacks=[tensorboard_callback, cb, cp_callback])
 
 
 

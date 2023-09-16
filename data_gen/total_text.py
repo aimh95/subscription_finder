@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import math
 
 class TotalTextDataLoader(tf.keras.utils.Sequence):
-    def __init__(self, dataset_path, batch_size=32, target_resolution = (360, 360), shuffle=False):
+    def __init__(self, dataset_path, batch_size=32, target_resolution = (240, 240), shuffle=False):
         super(TotalTextDataLoader, self).__init__()
         # self.dataset_path = dataset_path
         self.batch_size = batch_size
@@ -35,16 +35,49 @@ class TotalTextDataLoader(tf.keras.utils.Sequence):
         x_dataset = np.empty(shape=(self.batch_size, self.resolution[0], self.resolution[1], 3))
         y_dataset = np.empty(shape=(self.batch_size, self.resolution[0], self.resolution[1], 1))
 
-        for i in range(self.batch_size):
-            height, width, _ = x_input_list[i].shape
-            dy, dx = self.resolution
+        for i in range(len(x_input_list)):
+            x_data = self._resize_img(x_input_list[i])
+            y_data = self._resize_img(y_input_list[i])
+            # plt.figure()
+            # plt.imshow(x_data)
+            # plt.imshow(y_data)
+            # could not broadcast input array from shape (240,240) into shape (240,240,1)
+            x_dataset[i] = x_data
+            y_dataset[i] = y_data
 
-            y = random.randrange(0, height - dy)
-            x = random.randrange(0, width - dx)
-            self.random_coord = (y, x)
-            x_dataset[i] = self._image_crop(x_input_list[i])
-            y_dataset[i] = self._image_crop(y_input_list[i])
+
         return x_dataset, y_dataset
+
+    # def _image_dataset_gen(self, x_input_list, y_input_list):
+    #     # print("__getitem__ 접근", idx)
+    #     try:
+    #         x_dataset = np.empty(shape=(self.batch_size, self.resolution[0], self.resolution[1], 3))
+    #         y_dataset = np.empty(shape=(self.batch_size, self.resolution[0], self.resolution[1], 1))
+    #
+    #         for i in range(self.batch_size):
+    #             height, width = x_input_list[i].shape[0], x_input_list[i].shape[1]
+    #
+    #             dy, dx = self.resolution
+    #
+    #             y = random.randrange(0, max(1, height - dy))
+    #             x = random.randrange(0, max(1, width - dx))
+    #             self.random_coord = (y, x)
+    #             x_data = self._image_crop(x_input_list[i])
+    #             y_data = self._image_crop(y_input_list[i])
+    #             data_width, data_height, _ = x_data.shape
+    #             if data_width < dx or data_height < dy:
+    #                 x_data = self._padding_img(x_data)
+    #                 y_data = self._padding_img(y_data)
+    #
+    #             #could not broadcast input array from shape (240,240) into shape (240,240,1)
+    #             x_dataset[i] = x_data/255.
+    #             y_dataset[i] = y_data/255.
+    #     except:
+    #         pass
+    #         # plt.figure()
+    #         # plt.imshow(x_dataset[i])
+    #         # plt.imshow(y_data)
+    #     return x_dataset, y_dataset
 
     def _image_crop(self, image):
         y, x = self.random_coord
@@ -91,16 +124,11 @@ class TotalTextDataLoader(tf.keras.utils.Sequence):
         # ds = ds.map(lambda x: tf.image.decode_image(x), num_parallel_calls=AUTOTUNE)
         image_len = len(image_files)
         image = []
-        ds = np.empty(shape=(image_len, self.resolution[0], self.resolution[1], ch))
         for i, file in enumerate(image_files):
             if ch == 1:
                 image.append(self._unsqueeze(cv2.imread(file, cv2.IMREAD_GRAYSCALE)))
             else:
                 image.append(cv2.cvtColor(cv2.imread(file), cv2.COLOR_BGR2RGB))
-            image = self._random_crop(image)
-            # plt.figure()
-            # plt.imshow(image)
-            ds[i] = image
         return image
 
     def _unsqueeze(self, image):
@@ -117,7 +145,7 @@ class TotalTextDataLoader(tf.keras.utils.Sequence):
         return padded_img
 
     def _resize_img(self, image):
-        image = cv2.resize(image, (self.resolution[1], self.resolution[0]), interpolation=cv2.INTER_LANCZOS4)
-        if len(image.shape) == 2:
-            image = self._unsqueeze(image)
-        return image
+        output_image = cv2.resize(image, (self.resolution[1], self.resolution[0]), interpolation=cv2.INTER_LANCZOS4)
+        if len(output_image.shape) == 2:
+            output_image = self._unsqueeze(output_image)
+        return output_image / 255
