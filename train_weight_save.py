@@ -19,7 +19,7 @@ model = U_Net()
 data_version = 1
 initial_epoch = 14
 
-
+pass
 finetuning_weight_path = os.path.join("weight_path/real_u_net_totaltext_100epochs", str(initial_epoch))
 # finetuning_weight_path = "None"
 finetuning_weight_dir = os.path.dirname(finetuning_weight_path)

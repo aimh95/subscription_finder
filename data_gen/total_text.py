@@ -45,7 +45,7 @@ class TotalTextDataLoader(tf.keras.utils.Sequence):
             x_dataset[i] = x_data
             y_dataset[i] = y_data
 
-
+pass
         return x_dataset, y_dataset
 
     # def _image_dataset_gen(self, x_input_list, y_input_list):
