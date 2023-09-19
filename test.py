@@ -12,14 +12,15 @@ import tensorflow as tf
 padding = 100
 
 model = U_Net()
-test_dataset = get_input_data(25, 30, file_path = "./datasets/test_dataset/starwars.mp4")
+test_dataset = get_input_data(25, 30, file_path = "./datasets/test_dataset/ScaryMovie4.mp4")
 
 fourcc = cv2.VideoWriter_fourcc(*'DIVX')
 out = cv2.VideoWriter('prob_map.mp4', fourcc, 23.976, (1280, 694))
 concat_output = cv2.VideoWriter('concat_output.mp4', fourcc, 23.976, (1280, 694*2))
 
-check_point_path = "weight_path/real_u_net_totaltext_100epochs/cp-0015.ckpt"
-# check_point_path = "weight_path/real_u_net_custom_dataset_whiteblack_fonts_60epochs/cp-0060.ckpt"
+check_point_path = "weight_path/real_u_net_custom_dataset_colorful_fonts_100epochs/cp-0030.ckpt"
+# check_point_path = "weight_path/real_u_net_custom_dataset_whiteblack_fonts_60epochs/cp-0060.ckpt"가
+# check_point_path = "weight_path/real_u_net_totaltext_100epochs/cp-0070.ckpt"
 # weight_dir = os.path.join(weight_path, str(epoch))
 
 model.load_weights(check_point_path)
