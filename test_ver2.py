@@ -16,13 +16,13 @@ padding = 100
 
 model = U_Net()
 
-video_path = "./datasets/test_dataset/ScaryMovie4.mp4" #dataset_path
+video_path = "./datasets/test_dataset/yesman.mp4" #dataset_path
 output_video_dir = "./results/"
 # model_weight_path = "weight_path/real_u_net_light_totaltext_150epochs_load/cp-0141.ckpt"
-model_weight_path = "weight_path/real_u_net_totaltext_100epochs/cp-0001.ckpt"
+model_weight_path = "weight_path/real_u_net_totaltext_100epochs/cp-0071.ckpt"
 
 test_data_loader = data_generation_test_ver.ReadVideoAsData(dataset_path=video_path, output_path=output_video_dir, model_weight_path=model_weight_path, model=model)
 
-test_data_loader._run(start_time=0, end_time=20)
+test_data_loader._run()
 
 #ndarray: 232 880 3 [[[0.17647059 0.12156863 0.06666667],  [0.17647059 0.12156863 0.06666667],  [0.17647059 0.12156863 0.06666667],  ...,  [0.13333333 0.08627451 0.0745098 ],  [0.13333333 0.08627451 0.0745098 ],  [0.13333333 0.08627451 0.0745098 ]],, [[0.17254902 0.11764706 0

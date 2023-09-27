@@ -67,7 +67,7 @@ def dataset_generator(input_img):
     draw = ImageDraw.Draw(input_img_pil)
     font = ImageFont.truetype(font_selection, font_size)
     for i in range(len(subtitles)):
-        draw.text((x_min, y_min+i*font_size), subtitles[i], fill="white", font=font, stroke_width=stroke_width, stroke_fill="black")
+        draw.text((x_min, y_min+i*font_size), subtitles[i], fill=fill_color, font=font, stroke_width=stroke_width, stroke_fill=stroke_color)
     subtitle_mapping = ground_truth_mapping(keras.utils.img_to_array(input_img_pil), x_min, y_min, x_max, y_max)
     # input_img_pil.show()
 
@@ -109,7 +109,7 @@ def grid_to_img(input_grid, n_sep=16):
             output_img[i*crop_height:(i+1)*crop_height, j*crop_width:(j+1)*crop_width, :] = input_grid[i]
     return output_img
 
-def custom_dataloader(data_path="/Users/iptvpeullaespomgaebaltim/Documents/pythoncode/subscription_finder/datasets/indoor", n_sep = 1, batch_size = 32, image_size = (360, 360)):
+def custom_dataloader(data_path="/Users/pythoncodes/subtitle_finder/datasets/train_dataset/indoor", n_sep = 1, batch_size = 32, image_size = (360, 360)):
     train_ds = tf.keras.utils.image_dataset_from_directory(data_path, labels=None, batch_size=1, image_size=image_size, seed = 123)
 
     n_grid = n_sep**2
@@ -131,20 +131,20 @@ def custom_dataloader(data_path="/Users/iptvpeullaespomgaebaltim/Documents/pytho
     fig = plt.figure()
     rows = n_sep
     cols = n_sep
-    # for i in range(n_sep**2):
-    #     ax = fig.add_subplot(rows, cols, i + 1)
-    #     ax.axis("off")
-    #     ax.imshow(train_y[i+1])
-    #     pass
-    # fig = plt.figure()
-    # rows = n_sep
-    # cols = n_sep
-    # for i in range(n_sep**2):
-    #     ax = fig.add_subplot(rows, cols, i + 1)
-    #     ax.axis("off")
-    #     ax.imshow(train_x[i + 1])
-    #     pass
+    for i in range(n_sep**2):
+        ax = fig.add_subplot(rows, cols, i + 1)
+        ax.axis("off")
+        ax.imshow(train_y[i+1])
+        pass
+    fig = plt.figure()
+    rows = n_sep
+    cols = n_sep
+    for i in range(n_sep**2):
+        ax = fig.add_subplot(rows, cols, i + 1)
+        ax.axis("off")
+        ax.imshow(train_x[i + 1])
+        pass
     return train_x, train_y
 
 
-# custom_dataloader()
+custom_dataloader()

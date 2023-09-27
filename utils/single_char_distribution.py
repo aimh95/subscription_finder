@@ -173,7 +173,7 @@ def dataset_generator(input_img):
     return tf.keras.utils.img_to_array(input_img_pil)/255., gaussian_map
 
 
-def custom_dataloader(data_path="/Users/pythoncodes/subtitle_finder/datasets/indoor",batch_size = 32, image_size = (480, 720), crop_size = 240):
+def custom_dataloader(data_path="/Users/pythoncodes/subtitle_finder/datasets/train_dataset/indoor",batch_size = 32, image_size = (480, 720), crop_size = 240):
     train_ds = tf.keras.utils.image_dataset_from_directory(data_path, labels=None, batch_size=1, image_size=image_size)
     n_batch = len(train_ds)//batch_size
 
@@ -183,11 +183,11 @@ def custom_dataloader(data_path="/Users/pythoncodes/subtitle_finder/datasets/ind
     # plt.figure()
     for i, img in enumerate(train_ds):
         img = random_crop(img[0], crop_size)
-        train_x[i], train_y[i, :, :, 0] = dataset_generator(img)
-        # plt.imshow(train_x[i])
-        # plt.imshow(train_y[i])
+        train_x[i], train_y[i, :, :, 0] = dataset_sentence_generator(img)
+        plt.imshow(train_x[i])
+        plt.imshow(train_y[i])
 
 
     return train_x, train_y
 
-# custom_dataloader()
+custom_dataloader()

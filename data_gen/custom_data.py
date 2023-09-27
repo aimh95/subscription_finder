@@ -71,10 +71,11 @@ class CustomDataLoader(tf.keras.utils.Sequence):
         for i, image_numpy in enumerate(image_batch):
             self.random_sentence = self._subtitle_info_randgen()
             image = self._random_crop(image_numpy)
-            # plt.imshow(x_dataset[i-1])
+            # plt.imshow(image)
             image = self._sentence_burn_in(image)
+            # plt.imshow(image)
             mapping = self._sentence_map()
-            # plt.imshow(y_dataset[i-1])
+            # plt.imshow(mapping)
             x_dataset[i], y_dataset[i] = image, mapping
         return x_dataset, y_dataset
 
@@ -97,7 +98,7 @@ class CustomDataLoader(tf.keras.utils.Sequence):
         draw = ImageDraw.Draw(image_pil)
         font = ImageFont.truetype(self.random_sentence["font_selection"], self.random_sentence["font_size"])
         draw.text((self.random_sentence["x_min"], self.random_sentence["y_min"]), self.random_sentence["sentence"],
-                  fill=self.random_sentence["fill_color"], font=font, stroke_width=self.random_sentence["stroke_width"], stroke_fill="black")
+                  fill="white", font=font, stroke_width=self.random_sentence["stroke_width"], stroke_fill="black")
         # image_pil.show()
         return tf.keras.utils.img_to_array(image_pil)/255.
 
