@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 
 
 model = U_Net()
-train_x, train_y = custom_dataloader(data_path="./datasets/train_dataset/indoor",batch_size=1)
+train_x, train_y = custom_dataloader(data_path="../datasets/train_dataset/indoor", batch_size=1)
 # data_loder = total_text.DataLoader(dataset_path="./datasets/train_dataset/totaltext")
 # train_x, train_y = data_loder.data_gen()
 
@@ -25,7 +25,7 @@ train_x, train_y = custom_dataloader(data_path="./datasets/train_dataset/indoor"
 
 
 
-finetuning_check_point_path = "./check_point/real_u_net_61_0100"
+finetuning_check_point_path = "../check_point/real_u_net_61_0100"
 fine_tune_at = 62
 
 # check_point_path = "./check_point/real_u_net_realworld_dataset_finetuning/cp.ckpt"
@@ -34,7 +34,7 @@ check_point_dir = os.path.dirname(check_point_path)
 
 
 model.compile(optimizer="adam", loss="binary_crossentropy")
-model = tf.keras.models.load_model("./MyModel_tf")
+model = tf.keras.models.load_model("../MyModel_tf")
 
 cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=check_point_path, save_weights_only=True, verbose=1)
 

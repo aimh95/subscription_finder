@@ -1,20 +1,17 @@
-import random
 from PIL import Image, ImageFont, ImageDraw
 import tensorflow as tf
 import cv2
 import os
-import glob
-from models.real_u_net import U_Net
-import string
-from tensorflow.python.data.experimental import AUTOTUNE
 import numpy as np
-import tensorflow_datasets as tfds
+from utils.custom_utils import unsqueeze
+from models.real_u_net import EncoderConvBlock, DecoderConvBlock, U_Net
 import matplotlib.pyplot as plt
-import math
-from utils.utilities import unsqueeze
+from utils.custom_utils import grad
+from keras.metrics import binary_accuracy, Precision, Recall, F1Score
+import csv
 
 class ReadVideoAsData(tf.keras.utils.Sequence):
-    def __init__(self, dataset_path, output_path, model_weight_path, model, padding = 140):
+    def __init__(self, dataset_path, output_path, model_weight_path, model, padding = 140, classification_mode=0):
         super(ReadVideoAsData, self).__init__()
         # self.dataset_path = dataset_path
         self.data_dir = dataset_path
@@ -23,12 +20,26 @@ class ReadVideoAsData(tf.keras.utils.Sequence):
 
         self.model = model
         self.padding = padding
+        self.classification_mode = classification_mode
 
         self.video_capture, self.video_spf = self._read_vid_file()
         self.video_writer = self._video_writer_initializer()
+        self.ground_truth = self._get_ground_truth()
+        self.classification_result = []
+
+    def _get_ground_truth(self):
+        csv_name = self.data_dir.split("/")[-1].split(".")[0]+".csv"
+        gt_dir = "./datasets/test_dataset/classification_result"
+
+        ground_truth = []
+        with open(os.path.join(gt_dir, csv_name), 'r', encoding="utf-8") as f:
+            next(f)
+            csv_reader = csv.reader(f)
+            for line in csv_reader:
+                ground_truth.append(int(line[-1]))
+        return ground_truth
 
     def _run(self, start_time=None, end_time=None, frame=None):
-        self._model_weight_loader()
         success = True
         time_stamp = 0
         frame_num = 0
@@ -36,50 +47,114 @@ class ReadVideoAsData(tf.keras.utils.Sequence):
         while success:
             frame_num += 1
             success, image = self.video_capture.read()
+            if not success:
+                break
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             image = self._resize_input_frame(image)
             time_stamp = frame_num * self.video_spf
+            data_input = self._crop_roi(image, padding=self.padding)
+            if frame_num==1:
+                self._model_weight_loader(data_input)
 
             if start_time == None and end_time == None:
-                data_input = self._crop_roi(image, padding = self.padding)
                 histogram_count = self._histogram_analyser(data_input)
-                mapping_result_of_roi, subtitle_prob = self._get_subtitle_mapping_result(data_input)
-                mapping_result, mapping_result_on_frame = self._subtitle_mapping_full_size_recon(image, mapping_result_of_roi)
-                mapping_result_on_frame = self._subtitle_prob_burn_in(mapping_result_on_frame, subtitle_prob)
+                mapping_result_of_roi, subtitle_prob, maximum_heatmap = self._get_subtitle_mapping_result(data_input)
+                self.classification_result.append(1) if (maximum_heatmap > 0.999 and subtitle_prob>800) else self.classification_result.append(0)
+                mapping_result, mapping_result_on_frame = self._subtitle_mapping_full_size_recon(image,mapping_result_of_roi)
+                mapping_result_on_frame = self._subtitle_prob_burn_in(mapping_result_on_frame, subtitle_prob, maximum_heatmap)
                 mapping_result_on_frame = self._histogram_analysis_burn_in(mapping_result_on_frame, histogram_count)
                 self._save_in_dir(mapping_result_on_frame)
+                cv2.imshow("result", cv2.cvtColor(mapping_result_on_frame, cv2.COLOR_BGR2RGB))
+                cv2.waitKey(1)
 
             elif start_time <= time_stamp and end_time >= time_stamp:
                 data_input = self._crop_roi(image, padding=self.padding)
                 histogram_count = self._histogram_analyser(data_input)
-                mapping_result_of_roi, subtitle_prob = self._get_subtitle_mapping_result(data_input)
+                mapping_result_of_roi, subtitle_prob, maximum_heatmap = self._get_subtitle_mapping_result(data_input)
+                self.classification_result.append(1) if subtitle_prob > 1500 else self.classification_result.append(0)
                 mapping_result, mapping_result_on_frame = self._subtitle_mapping_full_size_recon(image, mapping_result_of_roi)
-                mapping_result_on_frame = self._subtitle_prob_burn_in(mapping_result_on_frame, subtitle_prob)
+                mapping_result_on_frame = self._subtitle_prob_burn_in(mapping_result_on_frame, subtitle_prob, maximum_heatmap)
                 mapping_result_on_frame = self._histogram_analysis_burn_in(mapping_result_on_frame, histogram_count)
                 self._save_in_dir(mapping_result_on_frame)
+                cv2.imshow("result", cv2.cvtColor(mapping_result_on_frame, cv2.COLOR_BGR2RGB))
+                cv2.waitKey(1)
+        if start_time != None or end_time != None:
+            self.ground_truth = self.ground_truth[int(start_time // self.video_spf):int(end_time // self.video_spf)]
+        accuracy,precision, recall, f1_score = self._get_classification_accuracy()
+        print("accuracy: ", accuracy)
+        print("precision: ", precision)
+        print("recall: ", recall)
+        print("f1_score: ", f1_score)
 
-            if frame!=None and frame_num==frame:
-                data_input = self._crop_roi(image, padding=self.padding)
-                mapping_result_of_roi, subtitle_prob = self._get_subtitle_mapping_result(data_input)
-                mapping_result, mapping_result_on_frame = self._subtitle_mapping_full_size_recon(image, mapping_result_of_roi)
-                histogram_count = self._histogram_analyser(data_input)
-                mapping_result_on_frame = self._subtitle_prob_burn_in(mapping_result_on_frame, subtitle_prob)
-                mapping_result_on_frame = self._histogram_analysis_burn_in(mapping_result_on_frame, histogram_count)
+    def _get_classification_accuracy(self):
+        precision_calc = Precision()
+        recall_calc = Recall()
+        f1_score_calc = F1Score()
 
-                self._capture_spcf_frame(mapping_result_on_frame, frame_num)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-        return
+        precision_calc.update_state(self.ground_truth, self.classification_result)
+        recall_calc.update_state(self.ground_truth, self.classification_result)
+        # f1_score_calc.update_state(self.ground_truth, self.classification_result)
+
+        accuracy = binary_accuracy(self.ground_truth, self.classification_result)
+        precision = precision_calc.result().numpy()
+        recall = recall_calc.result().numpy()
+        # f1_score = f1_score_calc.result().numpy()
+        f1_score = 2 * (precision * recall) / (precision + recall)
+
+        return accuracy, precision, recall, f1_score
+
+
+
+    def _feature_map_visualization(self, input_img):
+        vis_model = []
+        feature_map = []
+        input_img = tf.expand_dims(input_img/255., axis=0)
+        feature_map.append(input_img)
+        plt.figure()
+        plt.imshow(input_img[0])
+        plt.show
+
+        for i in range(len(self.model.layers)):
+            layer = self.model.layers[i]
+            if 'encoder' in layer.name:
+                plt.figure()
+                weight_loaded = layer.get_weights()
+                temp_model = EncoderConvBlock(filters=32 * 2**(len(feature_map)-1))
+                temp_model.build(input_shape=(feature_map[-1].shape))
+                temp_model.set_weights(weight_loaded)
+                prediction = temp_model.predict(feature_map[-1])
+                for i in range(prediction.shape[3]):
+                    plt.subplot(4 * 2**(len(feature_map)-1), 8, i+1)
+                    plt.imshow(prediction[0,:,:,i])
+                    plt.axis("off")
+                    plt.show()
+                feature_map.append(prediction)
+            if 'decoder' in layer.name:
+                plt.figure()
+                weight_loaded = layer.get_weights()
+                temp_model = DecoderConvBlock(filters=32*2**(6-len(feature_map)))
+                temp_model.build(input_shape=(feature_map[-1].shape))
+                temp_model.set_weights(weight_loaded)
+                prediction = temp_model.predict(feature_map[-1])
+                for i in range(prediction.shape[3]):
+                    plt.subplot(4*2**(6-len(feature_map)), 8, i+1 )
+                    plt.imshow(prediction[0,:,:,i])
+                    plt.axis("off")
+                    plt.show()
+                feature_map.append(prediction)
 
     def _resize_input_frame(self, image):
         resized_img = cv2.resize(image, dsize=(720, 480), interpolation=cv2.INTER_LANCZOS4)
         return resized_img
+
     def _capture_spcf_frame(self, image, frame):
         output_dir = os.path.join(self.output_dir, self.weight_path.split("/")[1], str(frame))
         cv2.imwrite(output_dir, image)
         return
 
-    def _model_weight_loader(self):
+    def _model_weight_loader(self, data_input):
+        self.model.build(unsqueeze(data_input).shape)
+        print("model is loaded from "+self.weight_path)
         self.model.load_weights(self.weight_path)
 
     def _crop_roi(self, input_frame, padding = 0):
@@ -90,7 +165,7 @@ class ReadVideoAsData(tf.keras.utils.Sequence):
     def _get_subtitle_mapping_result(self, data_input):
         data_input = unsqueeze(data_input/255.)
         output = self.model.predict(data_input, verbose = 2)
-        return output, np.sum(output)
+        return output, np.sum(output), np.max(output)
 
     def _subtitle_mapping_full_size_recon(self, input_frame, roi_mapping):
         original_height, original_width = self.frame_size
@@ -105,14 +180,14 @@ class ReadVideoAsData(tf.keras.utils.Sequence):
     def _plot_on_screen(self, result, winname):
         cv2.imshow(winname, result)
 
-    def _subtitle_prob_burn_in(self, image, subtitle_prob):
+    def _subtitle_prob_burn_in(self, image, subtitle_prob, subtitle_max):
         image_pil = tf.keras.utils.array_to_img(image)
         draw = ImageDraw.Draw(image_pil)
         font = ImageFont.truetype(font="./utils/movie_fonts/arial_bold.ttf", size=32)
         if subtitle_prob > 1500:
-            draw.text((10, 10), str(subtitle_prob)+"Sentence Detected!!", fill="red", font=font)
+            draw.text((10, 10), str(subtitle_prob)+"|"+str(subtitle_max)+"Sentence Detected!!", fill="red", font=font)
         else:
-            draw.text((10, 10), str(subtitle_prob)+"...", fill="blue", font=font)
+            draw.text((10, 10), str(subtitle_prob)+"|"+str(subtitle_max)+"...", fill="blue", font=font)
         return tf.keras.utils.img_to_array(image_pil).astype(np.uint8)
 
     def _histogram_analysis_burn_in(self, image, histogram_count):
@@ -132,7 +207,7 @@ class ReadVideoAsData(tf.keras.utils.Sequence):
 
     def _video_writer_initializer(self):
         fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-        output_dir = os.path.join(self.output_dir, self.weight_path.split("/")[1])
+        output_dir = os.path.join(self.output_dir, self.weight_path.split("/")[-2])
         if not os.path.isdir(output_dir):
             os.mkdir(output_dir)
         file_name = self.weight_path.split(".")[0][-4:]+self.data_dir.split("/")[-1]

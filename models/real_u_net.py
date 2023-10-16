@@ -1,6 +1,7 @@
 import keras.layers
 import tensorflow as tf
-
+import matplotlib.pyplot as plt
+import numpy as np
 
 class U_Net(tf.keras.Model):
     def __init__(self):
@@ -48,6 +49,7 @@ class EncoderConvBlock(tf.keras.Model):
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.conv3(x)
+
         return self.maxpool(x)
 
 
@@ -67,5 +69,3 @@ class DecoderConvBlock(tf.keras.Model):
         x = self.conv2(x)
         x = self.conv3(x)
         return self.upconv(x)
-
-

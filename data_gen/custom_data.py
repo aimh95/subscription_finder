@@ -87,11 +87,17 @@ class CustomDataLoader(tf.keras.utils.Sequence):
         height, width, ch = image.shape
         dy, dx = self.resolution
 
-        y = random.randrange(0, height-dy)
-        x = random.randrange(0, width-dx)
+        y = random.randrange(0, max(1, height-dy))
+        x = random.randrange(0, max(1, width-dx))
 
-        cropped_img = image[y:y+dy, x:x+dx, :]
+        cropped_img = self._pedded_img(image[y:min(height, y+dy), x:min(width, x+dx), :])
         return cropped_img
+
+    def _pedded_img(self, image):
+        y, x, ch = image.shape
+        padded_img = np.zeros((self.resolution[0], self.resolution[1], 3))
+        padded_img[:y, :x, :] = image
+        return padded_img
 
     def _sentence_burn_in(self, image):
         image_pil = tf.keras.utils.array_to_img(image)

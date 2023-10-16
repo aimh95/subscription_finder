@@ -67,3 +67,8 @@ def rotate_img(input_numpy, cX, cY, rotate_angle):
     M = cv2.getRotationMatrix2D((cX, cY), rotate_angle, 1.0)
     rotated_img = cv2.warpAffine(input_numpy, M, (width, height))
     return rotated_img
+
+def grad(model, inputs, targets, loss):
+  with tf.GradientTape() as tape:
+    loss_value = loss(model, inputs, targets, training=True)
+  return loss_value, tape.gradient(loss_value, model.trainable_variables)

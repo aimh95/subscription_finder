@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from utils.utilities import unsqueeze
+from utils.custom_utils import unsqueeze
 
 def get_input_data(start_time, end_time, file_path = "/Users/iptvpeullaespomgaebaltim/Documents/pythoncode/subscription_finder/datasets/yesman.mp4"):
     vidcap = cv2.VideoCapture(file_path)

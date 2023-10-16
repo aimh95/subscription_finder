@@ -5,9 +5,9 @@ import string
 import tensorflow as tf
 from PIL import ImageFont, ImageDraw
 import matplotlib.pyplot as plt
-from utils.utilities import random_crop
+from custom_utils.utils import random_crop
 import cv2
-import utils.utilities as util
+import custom_utils.utils as util
 
 def character_randgen(height, width):
     fonts_list = glob.glob("/Users/pythoncodes/subtitle_finder/utils/fonts/*.ttf")

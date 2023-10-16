@@ -1,5 +1,5 @@
 from utils.test_dataset_gen import get_input_data
-from utils.utilities import crop_img, numpyIMG_resize, cc_map_postprocessing, min_max_norm, sobel_operation
+from utils.custom_utils import crop_img, numpyIMG_resize, cc_map_postprocessing, min_max_norm, sobel_operation
 from models.real_u_net import U_Net
 from utils.test_dataset_gen import unsqueeze
 import matplotlib.pyplot as plt
@@ -15,8 +15,8 @@ model = U_Net()
 test_dataset = get_input_data(25, 30, file_path = "./datasets/test_dataset/ScaryMovie4.mp4")
 
 fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-out = cv2.VideoWriter('prob_map.mp4', fourcc, 23.976, (1280, 694))
-concat_output = cv2.VideoWriter('concat_output.mp4', fourcc, 23.976, (1280, 694*2))
+out = cv2.VideoWriter('../prob_map.mp4', fourcc, 23.976, (1280, 694))
+concat_output = cv2.VideoWriter('../concat_output.mp4', fourcc, 23.976, (1280, 694 * 2))
 
 check_point_path = "weight_path/real_u_net_custom_dataset_colorful_fonts_100epochs/cp-0030.ckpt"
 # check_point_path = "weight_path/real_u_net_custom_dataset_whiteblack_fonts_60epochs/cp-0060.ckpt"가
