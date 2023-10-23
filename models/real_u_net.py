@@ -1,4 +1,4 @@
-import keras.layers
+import tensorflow.keras.layers
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,9 +11,9 @@ class U_Net(tf.keras.Model):
         self.encoder_block3 = EncoderConvBlock(filters=128)
 
         self.decoder_block1 = DecoderConvBlock(filters=128)
-        self.concat1 = keras.layers.Concatenate(axis=3)
+        self.concat1 = tensorflow.keras.layers.Concatenate(axis=3)
         self.decoder_block2 = DecoderConvBlock(filters=64)
-        self.concat2 = keras.layers.Concatenate(axis=3)
+        self.concat2 = tensorflow.keras.layers.Concatenate(axis=3)
         self.decoder_block3 = DecoderConvBlock(filters=32)
 
         self.recon1 = tf.keras.layers.Conv2D(filters=32, kernel_size=(3, 3), padding="same", strides=(1, 1), activation="relu")

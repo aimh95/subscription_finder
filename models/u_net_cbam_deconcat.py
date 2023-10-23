@@ -6,15 +6,13 @@ import numpy as np
 class U_Net_CBAM(tf.keras.Model):
     def __init__(self):
         super(U_Net_CBAM, self).__init__()
-        self.encoder_block1 = EncoderConvBlock(filters=16)
+        self.encoder_block1 = EncoderConvBlock(filters=32)
         self.encoder_block2 = EncoderConvBlock(filters=32)
         self.encoder_block3 = EncoderConvBlock(filters=32)
 
         self.decoder_block1 = DecoderConvBlock(filters=32)
-        self.concat1 = tensorflow.keras.layers.Concatenate(axis=3)
         self.decoder_block2 = DecoderConvBlock(filters=32)
-        self.concat2 = tensorflow.keras.layers.Concatenate(axis=3)
-        self.decoder_block3 = DecoderConvBlock(filters=16)
+        self.decoder_block3 = DecoderConvBlock(filters=32)
 
         self.recon1 = tf.keras.layers.Conv2D(filters=32, kernel_size=(3, 3), padding="same", strides=(1, 1), activation="relu")
         self.recon2 = tf.keras.layers.Conv2D(filters=32, kernel_size=(3, 3), padding="same", strides=(1, 1), activation="relu")
@@ -25,10 +23,8 @@ class U_Net_CBAM(tf.keras.Model):
         enc2_x = self.encoder_block2(enc1_x)
         enc3_x = self.encoder_block3(enc2_x)
 
-        dec3_x = self.decoder_block1(enc3_x)
-        dec3_x = self.concat1([dec3_x, enc2_x])
-        dec2_x = self.decoder_block2(dec3_x)
-        dec2_x = self.concat1([dec2_x, enc1_x])
+        dec3_x = self.decoder_block1(enc3_x) + enc2_x
+        dec2_x = self.decoder_block2(dec3_x) + enc1_x
         dec1_x = self.decoder_block3(dec2_x)
 
         x = self.recon1(dec1_x)

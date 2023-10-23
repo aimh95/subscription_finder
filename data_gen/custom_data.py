@@ -8,12 +8,10 @@ from models.real_u_net import U_Net
 import string
 from tensorflow.python.data.experimental import AUTOTUNE
 import numpy as np
-import tensorflow_datasets as tfds
-import matplotlib.pyplot as plt
 import math
 
 class CustomDataLoader(tf.keras.utils.Sequence):
-    def __init__(self, dataset_path, batch_size = 32, target_resolution = (240, 240), shuffle=False):
+    def __init__(self, dataset_path, batch_size = 32, target_resolution = (240, 240), shuffle=False, heatmap_flag=1):
         super(CustomDataLoader, self).__init__()
         # self.dataset_path = dataset_path
         self.shuffle = shuffle
@@ -23,6 +21,7 @@ class CustomDataLoader(tf.keras.utils.Sequence):
         self.data_dir = dataset_path
 
         self.image_numpy_list = self._image_dataset(self._image_file())
+        self.heatmap_flag= heatmap_flag
 
         # self.dataset = self._image_dataset_gen()
 
@@ -34,6 +33,7 @@ class CustomDataLoader(tf.keras.utils.Sequence):
     def __getitem__(self, idx):
         # print("__getitem__ 접근", idx)
         batch_x, batch_y = self._image_dataset_gen(self.image_numpy_list[idx*self.batch_size:(idx+1)*self.batch_size])
+
         return batch_x, batch_y
 
 
@@ -74,7 +74,10 @@ class CustomDataLoader(tf.keras.utils.Sequence):
             # plt.imshow(image)
             image = self._sentence_burn_in(image)
             # plt.imshow(image)
-            mapping = self._sentence_map()
+            if self.heatmap_flag == 0:
+                mapping = self._sentence_map()
+            elif self.heatmap_flag == 1:
+                mapping = self._sentence_gaussian_distribution_map()
             # plt.imshow(mapping)
             x_dataset[i], y_dataset[i] = image, mapping
         return x_dataset, y_dataset
@@ -114,8 +117,24 @@ class CustomDataLoader(tf.keras.utils.Sequence):
                      self.random_sentence["x_min"]:self.random_sentence["x_max"], :] = 1
         return sentence_map
 
+    def _sentence_gaussian_distribution_map(self):
+        x_start, y_start = self.random_sentence["x_min"], self.random_sentence["y_min"]
+        sentence_map = np.zeros(shape=(self.resolution[0], self.resolution[1], 1))
+        for char in self.random_sentence["sentence"]:
+            sentence_width, sentence_height = self.font.getsize(char)
+            char_x_center, char_y_center = x_start + (sentence_width)//2, y_start + (sentence_height)//2
+            sentence_map += self._gaussian_distribution(char_x_center, char_y_center, sentence_width, sentence_height)
+
+
+
+    def _gaussian_distribution(self, x0, y0, width, height):
+        max_ = np.max(width, height)
+        x = np.arange(0, max_, 1, float)
+        y = x[:, np.newaxis]
+        return np.exp(-4 * np.log(2) * ((x - x0) ** 2) / width ** 2 + ((y - y0) ** 2) / height ** 2)
+
     def _subtitle_info_randgen(self):
-        fonts_list = glob.glob("/Users/pythoncodes/subtitle_finder/utils/fonts/*.ttf")
+        fonts_list = glob.glob("../utils/movie_fonts/*.ttf")
 
         subtitle_sentences = dict()
 
@@ -133,9 +152,9 @@ class CustomDataLoader(tf.keras.utils.Sequence):
         font_selection = random.choice(fonts_list)
         font_size = random.randrange(self.resolution[0] // 32, self.resolution[0] // 8)
 
-        font = ImageFont.truetype(font_selection, font_size)
+        self.font = ImageFont.truetype(font_selection, font_size)
         # subtitle_sentences["font"]= ImageFont.truetype(font_selection, font_size)
-        sentence_width, sentence_height = font.getsize(sentence)
+        sentence_width, sentence_height = self.font.getsize(sentence)
         x_min = random.randrange(0, max(1, self.resolution[1] - sentence_width))
         y_min = random.randrange(0, max(1, self.resolution[0] - sentence_height))
         x_max = int(min(x_min + sentence_width, self.resolution[1]))

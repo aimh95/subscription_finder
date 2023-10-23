@@ -7,7 +7,7 @@ from utils.custom_utils import unsqueeze
 from models.real_u_net import EncoderConvBlock, DecoderConvBlock, U_Net
 import matplotlib.pyplot as plt
 from utils.custom_utils import grad
-from keras.metrics import binary_accuracy, Precision, Recall, F1Score
+from tensorflow.keras.metrics import binary_accuracy, Precision, Recall
 import csv
 
 class ReadVideoAsData(tf.keras.utils.Sequence):
@@ -29,7 +29,7 @@ class ReadVideoAsData(tf.keras.utils.Sequence):
 
     def _get_ground_truth(self):
         csv_name = self.data_dir.split("/")[-1].split(".")[0]+".csv"
-        gt_dir = "./datasets/test_dataset/classification_result"
+        gt_dir = "../datasets/test_dataset/classification_result"
 
         ground_truth = []
         with open(os.path.join(gt_dir, csv_name), 'r', encoding="utf-8") as f:
@@ -89,19 +89,15 @@ class ReadVideoAsData(tf.keras.utils.Sequence):
     def _get_classification_accuracy(self):
         precision_calc = Precision()
         recall_calc = Recall()
-        f1_score_calc = F1Score()
 
         precision_calc.update_state(self.ground_truth, self.classification_result)
         recall_calc.update_state(self.ground_truth, self.classification_result)
-        # f1_score_calc.update_state(self.ground_truth, self.classification_result)
 
         accuracy = binary_accuracy(self.ground_truth, self.classification_result)
         precision = precision_calc.result().numpy()
         recall = recall_calc.result().numpy()
-        # f1_score = f1_score_calc.result().numpy()
-        f1_score = 2 * (precision * recall) / (precision + recall)
 
-        return accuracy, precision, recall, f1_score
+        return accuracy, precision, recall
 
 
 

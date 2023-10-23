@@ -17,6 +17,7 @@ class TotalTextDataLoader(tf.keras.utils.Sequence):
         self.x_dir = os.path.join(dataset_path, "train_x")
         self.y_dir = os.path.join(dataset_path, "train_y")
 
+
         self.x = self.x_dataset()
         self.y = self.y_dataset()
         # self.ds = self.dataset()
