@@ -12,12 +12,13 @@ padding = 100
 
 # model = U_Net()
 model = U_Net_CBAM()
+model.summary()
 
 video_path = "../datasets/test_dataset/video_source/starwars.mp4"  #dataset_path
 output_video_dir = "../results/"
 # model_weight_path = "weight_path/real_u_net_light_totaltext_150epochs_load/cp-0141.ckpt"
 # model_weight_path = "./weight_path/u_net_cbam_totaltext_100_epochs/149.h5"
-model_weight_path = "../weight_path/u_net_cbam_totaltext_200_epochs/599.tflite"
+model_weight_path = "../weight_path/u_net_cbam_craft_epochs/634.tflite"
 # model_weight_path = "../weight_path/real_u_net_totaltext_100epochs/cp-0001.ckpt"
 
 test_data_loader = data_generation_test_ver.ReadVideoAsData(dataset_path=video_path, output_path=output_video_dir, model_weight_path=model_weight_path, model=model)

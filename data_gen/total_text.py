@@ -16,11 +16,12 @@ class TotalTextDataLoader(tf.keras.utils.Sequence):
         self.resolution = target_resolution
         self.x_dir = os.path.join(dataset_path, "train_x")
         self.y_dir = os.path.join(dataset_path, "train_y")
+        self.pixel_dir = os.path.join(dataset_path, "train_pixel")
 
 
         self.x = self.x_dataset()
         self.y = self.y_dataset()
-        # self.ds = self.dataset()
+        self.gaussian = self.gaussian_dataset()
 
     def __len__(self):
         return math.ceil(len(self.x) / self.batch_size)
@@ -28,7 +29,9 @@ class TotalTextDataLoader(tf.keras.utils.Sequence):
     def __getitem__(self, idx):
         batch_x = self.x[idx*self.batch_size:(idx+1)*self.batch_size]
         batch_y = self.y[idx*self.batch_size:(idx+1)*self.batch_size]
-        batch_x, batch_y = self._image_dataset_gen(batch_x, batch_y)
+        batch_pixel = self.gaussian[idx*self.batch_size:(idx+1)*self.batch_size]
+        batch_x, batch_y = self._image_dataset_gen_1(batch_x, batch_y)
+        batch_x, batch_pixel = self._image_dataset_gen(batch_x, batch_pixel)
         return batch_x, batch_y
 
     def _image_dataset_gen(self, x_input_list, y_input_list):
@@ -49,36 +52,24 @@ class TotalTextDataLoader(tf.keras.utils.Sequence):
 
         return x_dataset, y_dataset
 
-    # def _image_dataset_gen(self, x_input_list, y_input_list):
-    #     # print("__getitem__ 접근", idx)
-    #     try:
-    #         x_dataset = np.empty(shape=(self.batch_size, self.resolution[0], self.resolution[1], 3))
-    #         y_dataset = np.empty(shape=(self.batch_size, self.resolution[0], self.resolution[1], 1))
-    #
-    #         for i in range(self.batch_size):
-    #             height, width = x_input_list[i].shape[0], x_input_list[i].shape[1]
-    #
-    #             dy, dx = self.resolution
-    #
-    #             y = random.randrange(0, max(1, height - dy))
-    #             x = random.randrange(0, max(1, width - dx))
-    #             self.random_coord = (y, x)
-    #             x_data = self._image_crop(x_input_list[i])
-    #             y_data = self._image_crop(y_input_list[i])
-    #             data_width, data_height, _ = x_data.shape
-    #             if data_width < dx or data_height < dy:
-    #                 x_data = self._padding_img(x_data)
-    #                 y_data = self._padding_img(y_data)
-    #
-    #             #could not broadcast input array from shape (240,240) into shape (240,240,1)
-    #             x_dataset[i] = x_data/255.
-    #             y_dataset[i] = y_data/255.
-    #     except:
-    #         pass
-    #         # plt.figure()
-    #         # plt.imshow(x_dataset[i])
-    #         # plt.imshow(y_data)
-    #     return x_dataset, y_dataset
+    def _image_dataset_gen_1(self, x_input_list, pixel_input_list):
+        # print("__getitem__ 접근", idx)
+        x_dataset = np.empty(shape=(self.batch_size, self.resolution[0], self.resolution[1], 3))
+        pixel_dataset = np.empty(shape=(self.batch_size, self.resolution[0], self.resolution[1], 1))
+
+        for i in range(len(x_input_list)):
+            x_data = self._resize_img(x_input_list[i])
+            y_data = self._resize_img(pixel_input_list[i])
+            # plt.figure()
+            # plt.imshow(x_data)
+            # plt.imshow(y_data)
+            # could not broadcast input array from shape (240,240) into shape (240,240,1)
+            x_dataset[i] = x_data
+            pixel_dataset[i] = y_data
+
+
+        return x_dataset, pixel_dataset
+
 
     def _image_crop(self, image):
         y, x = self.random_coord
@@ -97,6 +88,10 @@ class TotalTextDataLoader(tf.keras.utils.Sequence):
         y_data_list = self._image_dataset(self._y_image_file(), ch=1)
         return y_data_list
 
+    def gaussian_dataset(self):
+        y_data_list = self._image_dataset(self._y_pixel_image_file(), ch=1)
+        return y_data_list
+
     def _image_name_list(self):
         image_dir = self.x_dir
         image_list = [file_name.split(".")[-2] for file_name in os.listdir(image_dir)]
@@ -113,6 +108,12 @@ class TotalTextDataLoader(tf.keras.utils.Sequence):
 
     def _y_image_file(self):
         image_dir = self.y_dir
+        file_extension = self._get_extension(image_dir)
+        image_list = [os.path.join(image_dir, file+file_extension) for file in self._image_name_list()]
+        return image_list
+
+    def _y_pixel_image_file(self):
+        image_dir = self.pixel_dir
         file_extension = self._get_extension(image_dir)
         image_list = [os.path.join(image_dir, file+file_extension) for file in self._image_name_list()]
         return image_list

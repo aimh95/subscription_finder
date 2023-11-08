@@ -10,6 +10,7 @@ from utils.custom_utils import grad
 from tensorflow.keras.metrics import binary_accuracy, Precision, Recall
 import csv
 
+from tensorflow.keras.preprocessing.image import img_to_array, array_to_img
 class ReadVideoAsData(tf.keras.utils.Sequence):
     def __init__(self, dataset_path, output_path, model_weight_path, model, padding = 140, classification_mode=0):
         super(ReadVideoAsData, self).__init__()
@@ -177,29 +178,29 @@ class ReadVideoAsData(tf.keras.utils.Sequence):
         cv2.imshow(winname, result)
 
     def _subtitle_prob_burn_in(self, image, subtitle_prob, subtitle_max):
-        image_pil = tf.keras.utils.array_to_img(image)
+        image_pil = array_to_img(image)
         draw = ImageDraw.Draw(image_pil)
-        font = ImageFont.truetype(font="./utils/movie_fonts/arial_bold.ttf", size=32)
+        font = ImageFont.truetype(font="../utils/movie_fonts/arial_bold.ttf", size=32)
         if subtitle_prob > 1500:
             draw.text((10, 10), str(subtitle_prob)+"|"+str(subtitle_max)+"Sentence Detected!!", fill="red", font=font)
         else:
             draw.text((10, 10), str(subtitle_prob)+"|"+str(subtitle_max)+"...", fill="blue", font=font)
-        return tf.keras.utils.img_to_array(image_pil).astype(np.uint8)
+        return img_to_array(image_pil).astype(np.uint8)
 
     def _histogram_analysis_burn_in(self, image, histogram_count):
-        image_pil = tf.keras.utils.array_to_img(image)
+        image_pil = array_to_img(image)
         if histogram_count > 10000:
             draw = ImageDraw.Draw(image_pil)
-            font = ImageFont.truetype(font="./utils/movie_fonts/arial_bold.ttf", size=32)
+            font = ImageFont.truetype(font="../utils/movie_fonts/arial_bold.ttf", size=32)
             # draw.text((10, 40), str(histogram_count), fill="blue", font=font)
             draw.text((10, 40), str(histogram_count)+"White Background", fill="blue", font=font)
         else:
             draw = ImageDraw.Draw(image_pil)
-            font = ImageFont.truetype(font="./utils/movie_fonts/arial_bold.ttf", size=32)
+            font = ImageFont.truetype(font="../utils/movie_fonts/arial_bold.ttf", size=32)
             draw.text((10, 40), str(histogram_count)+"...", fill="blue", font=font)
         # plt.figure()
         # plt.imshow(image_pil)
-        return tf.keras.utils.img_to_array(image_pil).astype(np.uint8)
+        return img_to_array(image_pil).astype(np.uint8)
 
     def _video_writer_initializer(self):
         fourcc = cv2.VideoWriter_fourcc(*'DIVX')
